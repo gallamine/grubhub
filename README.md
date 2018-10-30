@@ -17,7 +17,12 @@ This provides a command-line interface to train a model.
 Local Development
 -----------------
 
-python setup.py develop
+Create a `conda` environment for development with `conda env create`. Then `source activate grubhub` to activate it.
+
+Install the package for local development:
+```
+make install-dev
+```
 
 Use
 ---
