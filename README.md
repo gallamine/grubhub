@@ -39,7 +39,7 @@ Features
 --------
 
 -   Train a model for specific regions using the `-r` or `--region` cli argument
--   Define multiple data sources under `data/training_data.json`
+-   Define multiple data sources under `grubhub/training_data.py`
 -   Build models from cached data (not implemented yet)
 
 Credits
