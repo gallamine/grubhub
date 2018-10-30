@@ -1,0 +1,7 @@
+{
+  "default": {
+    "doc_id": "1vKJ0GIKw18td9iHpKPa5N14fFsrBaYJY",
+    "url": "https://drive.google.com/uc?id={}&export=dowload",
+      "columns": ["date", "event", "order_count", "region_id"]
+  }
+}
