@@ -204,6 +204,7 @@ def train(region: str) -> str:
     Returns: location of serialized model
 
     """
+
     logger = daiquiri.getLogger(__name__)
     logger.info(f"Training the model for region {region}!")
 
