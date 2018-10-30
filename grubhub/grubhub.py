@@ -24,8 +24,9 @@ def get_data_source(data_set: str = 'default') -> (str, list, list):
     Returns: formatted URL of the data we'd like to grab, list of the required colunn names
 
     """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    with open(os.path.join('data', 'training_data.json')) as f:
+    with open(os.path.join(base_dir, 'data', 'training_data.json')) as f:
         data_definitions = json.load(f)
 
     try:
