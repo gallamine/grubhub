@@ -8,13 +8,13 @@ import json
 import os
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
-from typing import Union
+import time
 
 
 daiquiri.setup(level=logging.INFO)
 
 
-def get_data_source(data_set:str='default') -> (str,list):
+def get_data_source(data_set: str='default') -> (str, list):
     """
     Return the resource location for the data we'd like to grab.
     Data is retrieved from a data definition file in `data/training_data.json`.
@@ -23,10 +23,10 @@ def get_data_source(data_set:str='default') -> (str,list):
 
     """
 
-    with open(os.path.join('data','training_data.json')) as f:
+    with open(os.path.join('data', 'training_data.json')) as f:
         data_definitions = json.load(f)
 
-    training_data_defnition = data_definitions.get(data_set,'default')
+    training_data_defnition = data_definitions.get(data_set, 'default')
 
     try:
         training_data_location = training_data_defnition['url'].format(training_data_defnition['doc_id'])
@@ -35,11 +35,11 @@ def get_data_source(data_set:str='default') -> (str,list):
     except KeyError:
         logging.exception(f"Missing training data definition (`doc_id` and `url`) for data set {data_set}")
 
-    except:
+    except Exception:
         raise
 
 
-def validate_data(data_df:pd.DataFrame, req_column_names:list) -> bool:
+def validate_data(data_df: pd.DataFrame, req_column_names: list) -> bool:
     """
     TODO
     Args:
@@ -59,12 +59,12 @@ def validate_data(data_df:pd.DataFrame, req_column_names:list) -> bool:
     return True
 
 
-def load_data(data_source:str='default', use_cache:bool=False) -> pd.DataFrame:
+def load_data(data_source: str='default', use_cache: bool=False) -> pd.DataFrame:
     """
 
     Args:
-        url:
         use_cache:
+        data_source:
 
     Returns:
 
@@ -74,7 +74,7 @@ def load_data(data_source:str='default', use_cache:bool=False) -> pd.DataFrame:
 
     else:
 
-        data_url, req_column_names = get_data_source('default')
+        data_url, req_column_names = get_data_source(data_source)
         df = pd.read_csv(data_url, parse_dates=['date'])
 
         if validate_data(df, req_column_names):
@@ -84,7 +84,7 @@ def load_data(data_source:str='default', use_cache:bool=False) -> pd.DataFrame:
             raise Exception('Training data is invalid')
 
 
-def build_features(data_df: pd.DataFrame, region:int=1) -> pd.DataFrame:
+def build_features(data_df: pd.DataFrame, region: int=1) -> pd.DataFrame:
     """
 
     Get a dataframe raw input, build training features from this dataset and return the full dataframe with features.
@@ -109,18 +109,20 @@ def build_features(data_df: pd.DataFrame, region:int=1) -> pd.DataFrame:
 
         return df.loc[df.region_id == region]
 
-    except Exception as e:
+    except Exception:
         logging.exception(f"There was an error building featues for {data-df}")
 
 
-def train_model(df_train, predictors:list, n_trees:int=50):
+def train_model(df_train, predictors: list, n_trees: int=50) -> (RandomForestRegressor, pd.DataFrame):
     """
-
+    Train a RandomForestRegression using the colunns of `df_train` listed in `predictors`.
     Args:
-        predictors:
-        df_train:
+        predictors: list of column names to use in input to RF
+        df_train: training matrix
+        n_trees: number of trees to use in the regression
 
     Returns:
+        trained model and dataframe with the predicted and residual colunn added
 
     """
 
@@ -135,47 +137,57 @@ def train_model(df_train, predictors:list, n_trees:int=50):
 
         return rf, df_train
 
-    except Exception as e:
+    except Exception:
         logging.exception("There was an error training the model.")
         raise
 
 
-def evaluate_model(model:RandomForestRegressor, df_train) -> RandomForestRegressor:
+def evaluate_model(model: RandomForestRegressor, df_train) -> (RandomForestRegressor, float):
     """
+    Compute the RMSE from the `residual` column of the input data_frame and store as part of the model so we have a record of the particular models performance.
 
     Args:
-        mode:
-        df_train:
+        model: Model object that we'll set a `_model_info` attribute on containing a dictionary describing the performance.
+        df_train: the training data with a `residual` column that we use to calculate the RMSE of the classifier
 
-    Returns:
+    Returns: modified model object, rmse value
 
     """
 
     rmse_1 = np.sqrt(df_train.residual.pow(2).mean())
     setattr(model, '_model_info', {'performance':{'rmse':rmse_1}})
-    return model
+    return model, rmse_1
 
 
-def persist_model(model:RandomForestRegressor, location:str='tmp/trained_model.pickle') -> str:
+def persist_model(model: RandomForestRegressor, location: str='/tmp/trained_model.pickle') -> str:
     """
+    Take a RF model object and pickle to disk. Make sure we can unpickle it from the same location.
+
+    TODO: 1) capture model hash for immutable storage 2) give optional GZIP compression 3) use different serializer that is safer
 
     Args:
-        model:
+        model: the RandomForest model object
+        location: location where we'll serialize on disk
 
-    Returns:
+    Returns: location of the model on disk
 
     """
     import pickle
 
     # TODO Take the hash of the model and use as persistent name
 
-
     with open(os.path.join(location),'wb') as f:
         pickle.dump(model, f)
 
+    with open(os.path.join(location), 'rb') as f:
+        try:
+            pickle.load(f)
+            return location
+        except Exception:
+            logging.exception("There was a problem serializing the model to disk")
 
 
-def train(region:str) -> str:
+def train(region: str) -> str:
     """
 
 
@@ -186,11 +198,15 @@ def train(region:str) -> str:
 
     """
     logger = daiquiri.getLogger(__name__)
-    logger.info(f"Training the model for region {region}!!")
+    logger.info(f"Training the model for region {region}!")
 
+    start_time =  time.time()
     df = load_data(data_source='default', use_cache=False)
     df = build_features(df, region=region)
     model, df = train_model(df, predictors = ['weekday', 'month', 'event', 'time'])
-    model = evaluate_model(model, df)
+    model, rmse = evaluate_model(model, df)
+    train_time =  time.time() - start_time
+
+    logging.info(f"Trained model for region {region} in {train_time} seconds with RMSE of {rmse}")
     persist_model(model)
 

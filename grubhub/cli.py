@@ -12,7 +12,7 @@ daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger(__name__)
 
 
-def train(region:str) -> str:
+def train(region: str) -> str:
     grubhub.train(region=region)
 
 
