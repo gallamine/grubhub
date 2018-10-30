@@ -1,4 +1,4 @@
-{
+training_data = {
   "default": {
     "doc_id": "1vKJ0GIKw18td9iHpKPa5N14fFsrBaYJY",
     "url": "https://drive.google.com/uc?id={}&export=download",

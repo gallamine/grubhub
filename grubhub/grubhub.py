@@ -4,7 +4,6 @@
 import daiquiri
 import logging
 import pandas as pd
-import json
 import os
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -16,18 +15,20 @@ daiquiri.setup(level=logging.INFO)
 def get_data_source(data_set: str = 'default') -> (str, list, list):
     """
     Return the resource location for the data we'd like to grab.
-    Data is retrieved from a data definition file in `data/training_data.json`.
+    Data is retrieved from a data definition file in `training_data.py`.
+
+    TODO: I'd rather define this as a json/yaml config file, but I have to figure out how
+    to distribute those with setuptools, and that's non-trivial.
 
     Args:
-        data_set: dataset defined in `data/training_data.json`. Default is `default`
+        data_set: dataset defined in `training_data.py`. Default is `default`
 
     Returns: formatted URL of the data we'd like to grab, list of the required colunn names
 
     """
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    from grubhub import training_data
 
-    with open(os.path.join(base_dir, 'data', 'training_data.json')) as f:
-        data_definitions = json.load(f)
+    data_definitions = training_data.training_data
 
     try:
         training_data_definition = data_definitions.get(data_set, {})
@@ -76,12 +77,12 @@ def validate_data(data_df: pd.DataFrame, req_column_names: list, req_column_type
 def load_data(data_source: str = 'default', use_cache: bool = False) -> pd.DataFrame:
     """
 
-    Load the data from a url defined by the `data_source` in `data/training_data.json`.
+    Load the data from a url defined by the `data_source` in `data/training_data.py`.
     Make sure the data passes some basic validation steps before proceeding.
 
     Args:
         use_cache: Read the data from cache?
-        data_source: Name of source data defined in data/training_data.json
+        data_source: Name of source data defined in data/training_data.py
 
     Returns: DataFrame of the valid loaded data.
 
