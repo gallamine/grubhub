@@ -17,7 +17,13 @@ This provides a command-line interface to train a model.
 Local Development
 -----------------
 
-Create a `conda` environment for development with `conda env create`. Then `source activate grubhub` to activate it.
+Check out this repository:
+
+```bash
+git clone git@github.com:gallamine/grubhub.git
+```
+
+Create a [`conda`][conda] environment for development with `conda env create`. Then `source activate grubhub` to activate it.
 
 Install the package for local development:
 ```
@@ -52,3 +58,4 @@ This package was created with [Cookiecutter] and the
   [![Documentation Status]]: https://grubhub.readthedocs.io/en/latest/?badge=latest
   [Cookiecutter]: https://github.com/audreyr/cookiecutter
   [audreyr/cookiecutter-pypackage]: https://github.com/audreyr/cookiecutter-pypackage
+  [conda]: https://conda.io/miniconda.html
