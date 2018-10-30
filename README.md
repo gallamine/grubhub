@@ -3,7 +3,7 @@ Grubhub Model Trainer
 
 [![image](https://img.shields.io/pypi/v/grubhub.svg)](https://pypi.python.org/pypi/grubhub)
 
-[![](https://pypi.python.org/pypi/grubhub)](https://travis-ci.org/gallamine/grubhub)
+[![travis-build](https://pypi.python.org/pypi/grubhub)](https://travis-ci.org/gallamine/grubhub)
 
 [![Documentation Status](https://readthedocs.org/projects/grubhub/badge/?version=latest)](https://readthedocs.org/projects/grubhub/badge/?version=latest)
 
