@@ -7,9 +7,10 @@ import os
 
 def test_get_data_source():
 
-    data_url, req_columns = grubhub.get_data_source('default')
-    assert data_url == 'https://drive.google.com/uc?id=1vKJ0GIKw18td9iHpKPa5N14fFsrBaYJY&export=dowload'
+    data_url, req_columns, req_types = grubhub.get_data_source('default')
+    assert data_url == 'https://drive.google.com/uc?id=1vKJ0GIKw18td9iHpKPa5N14fFsrBaYJY&export=download'
     assert req_columns == ["date", "event", "order_count", "region_id"]
+    assert req_types == ["datetime64[ns]", "int64", "int64", "int64"]
 
     with pytest.raises(KeyError):
         grubhub.get_data_source('bad_source')
@@ -17,16 +18,19 @@ def test_get_data_source():
 def test_validate_data():
 
     test_df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
-    assert grubhub.validate_data(test_df, req_column_names=['a', 'b'])
+    assert grubhub.validate_data(test_df, req_column_names=['a', 'b'], req_column_types=['int64','int64'])
 
     with pytest.raises(KeyError):
-        assert grubhub.validate_data(test_df, req_column_names=['not', 'there'])
+        assert grubhub.validate_data(test_df, req_column_names=['not', 'there'], req_column_types=['object','object'])
+
+    with pytest.raises(TypeError):
+        assert grubhub.validate_data(test_df, req_column_names=['a', 'b'], req_column_types=['float64', 'float64'])
 
 
 def test_load_data(monkeypatch):
 
     def mock_get_data_source(region, use_cache=False):
-        return 'tests/test_data/test_csv_dataframe.csv', ['date', 'count']
+        return 'tests/test_data/test_csv_dataframe.csv', ['date', 'count'], ['datetime64[ns]','int64']
 
     monkeypatch.setattr(grubhub, 'get_data_source', mock_get_data_source)
 

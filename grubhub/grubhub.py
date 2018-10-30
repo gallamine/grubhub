@@ -13,10 +13,13 @@ import time
 daiquiri.setup(level=logging.INFO)
 
 
-def get_data_source(data_set: str = 'default') -> (str, list):
+def get_data_source(data_set: str = 'default') -> (str, list, list):
     """
     Return the resource location for the data we'd like to grab.
     Data is retrieved from a data definition file in `data/training_data.json`.
+
+    Args:
+        data_set: dataset defined in `data/training_data.json`. Default is `default`
 
     Returns: formatted URL of the data we'd like to grab, list of the required colunn names
 
@@ -28,7 +31,7 @@ def get_data_source(data_set: str = 'default') -> (str, list):
     try:
         training_data_definition = data_definitions.get(data_set, {})
         training_data_location = training_data_definition['url'].format(training_data_definition['doc_id'])
-        return training_data_location, training_data_definition['columns']
+        return training_data_location, training_data_definition['columns'], training_data_definition['dtypes']
 
     except KeyError:
         logging.exception(f"Missing training data definition (`doc_id` and `url`) for data set {data_set}")
@@ -38,21 +41,31 @@ def get_data_source(data_set: str = 'default') -> (str, list):
         raise
 
 
-def validate_data(data_df: pd.DataFrame, req_column_names: list) -> bool:
+def validate_data(data_df: pd.DataFrame, req_column_names: list, req_column_types: list) -> bool:
     """
-    TODO
+    This function validates the input data. The amount of validation is depended on conversations
+    with the data scientist building the model. Currently we just check that the required columns are present.
+
     Args:
-        data_df:
-        req_column_names:
+        data_df: raw data dataframe
+        req_column_names: required column names
+        req_column_types: expected numpy dtypes of each column
 
     Returns: True if the imported data is valid
 
     """
 
+    if len(req_column_names) != len(req_column_types):
+        raise Exception("column names and column types must be the same length.")
+
     for column in req_column_names:
         if column not in data_df.columns:
-            logging.error(f"Rquired column {column} is missing from the data. Was given {list(data_df.columns)}")
+            logging.error(f"Required column {column} is missing from the data. Was given {list(data_df.columns)}")
             raise KeyError
+
+    for column_type, column_name in zip(req_column_types, req_column_names):
+        if np.dtype(column_type) != data_df.dtypes[column_name]:
+            raise TypeError(f"column {column_name} is of an invalid type, {data_df.dtypes[column_name]}")
 
     # TODO Do other validation here
 
@@ -74,10 +87,10 @@ def load_data(data_source: str = 'default', use_cache: bool = False) -> pd.DataF
 
     else:
 
-        data_url, req_column_names = get_data_source(data_source)
+        data_url, req_column_names, req_column_types = get_data_source(data_source)
         df = pd.read_csv(data_url, parse_dates=['date'])
 
-        if validate_data(df, req_column_names):
+        if validate_data(df, req_column_names, req_column_types):
             return df
         else:
             # TODO We need a custom exception for invalid model data
