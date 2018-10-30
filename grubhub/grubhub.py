@@ -117,6 +117,9 @@ def build_features(data_df: pd.DataFrame, region: int = 1) -> pd.DataFrame:
 
     """
 
+    if region not in data_df.region_id.unique():
+        raise ValueError(f'Region {region} not found in the data, containing regions {data_df.region_id.unique()}')
+
     try:
         data_df.loc[:, 'month'] = data_df.date.dt.month
         data_df.loc[:, 'weekday'] = data_df.date.dt.weekday
