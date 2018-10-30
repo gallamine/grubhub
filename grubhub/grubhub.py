@@ -75,11 +75,14 @@ def validate_data(data_df: pd.DataFrame, req_column_names: list, req_column_type
 def load_data(data_source: str = 'default', use_cache: bool = False) -> pd.DataFrame:
     """
 
-    Args:
-        use_cache:
-        data_source:
+    Load the data from a url defined by the `data_source` in `data/training_data.json`.
+    Make sure the data passes some basic validation steps before proceeding.
 
-    Returns:
+    Args:
+        use_cache: Read the data from cache?
+        data_source: Name of source data defined in data/training_data.json
+
+    Returns: DataFrame of the valid loaded data.
 
     """
     if use_cache:
